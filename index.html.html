@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>C1 Report Language Trainer</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh;}
+
+header{background:#fff;border-bottom:1px solid #e8e7e0;padding:0.9rem 1.25rem;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:10;}
+header h1{font-size:16px;font-weight:500;flex:1;}
+header span{font-size:12px;color:#888;background:#f0efe8;padding:3px 10px;border-radius:12px;white-space:nowrap;}
+
+.container{max-width:700px;margin:0 auto;padding:1.25rem 1rem 3rem;}
+
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:1.25rem;}
+.tab{background:#fff;border:1px solid #e0dfd8;border-radius:10px;padding:10px 8px;font-size:13px;cursor:pointer;color:#666;transition:all 0.15s;font-family:inherit;text-align:center;line-height:1.3;}
+.tab:hover{border-color:#999;color:#333;}
+.tab.active{background:#1a1a18;border-color:#1a1a18;color:#fff;font-weight:500;}
+
+.section{display:none;}
+.section.active{display:block;}
+
+/* PHRASE BANK */
+.phrase-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1rem;}
+.pf-btn{background:#fff;border:1px solid #e0dfd8;border-radius:16px;padding:5px 12px;font-size:12px;cursor:pointer;color:#666;font-family:inherit;transition:all 0.12s;}
+.pf-btn:hover{border-color:#aaa;}
+.pf-btn.active{color:#fff;border-color:transparent;}
+.pf-btn.pf-all.active{background:#1a1a18;}
+.pf-btn.pf-intro.active{background:#085041;}
+.pf-btn.pf-findings.active{background:#0C447C;}
+.pf-btn.pf-trend.active{background:#3C3489;}
+.pf-btn.pf-rec.active{background:#633806;}
+.pf-btn.pf-concl.active{background:#712B13;}
+.phrase-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:1rem;}
+.phrase-card{background:#fff;border:1px solid #e0dfd8;border-radius:12px;padding:1rem;cursor:pointer;transition:border-color 0.15s;}
+.phrase-card:hover{border-color:#bbb;}
+.phrase-card.hidden{display:none;}
+.phrase-tag{display:inline-block;font-size:11px;font-weight:500;padding:3px 9px;border-radius:12px;margin-bottom:8px;letter-spacing:0.3px;}
+.tag-intro{background:#E1F5EE;color:#085041;}
+.tag-findings{background:#E6F1FB;color:#0C447C;}
+.tag-trend{background:#EEEDFE;color:#3C3489;}
+.tag-rec{background:#FAEEDA;color:#633806;}
+.tag-concl{background:#FAECE7;color:#712B13;}
+.phrase-en{font-size:15px;font-weight:500;color:#1a1a18;margin-bottom:4px;line-height:1.4;}
+.phrase-sk{font-size:13px;color:#888;margin-bottom:0;}
+.phrase-example{font-size:13px;color:#555;font-style:italic;line-height:1.6;border-left:2px solid #e0dfd8;padding-left:10px;display:none;margin-top:10px;}
+.hint-note{font-size:12px;color:#aaa;margin-bottom:0.75rem;}
+
+/* QUIZ & FV shared */
+.progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.score-label{font-size:11px;color:#888;margin-bottom:1px;text-transform:uppercase;letter-spacing:0.3px;}
+.score-val{font-size:22px;font-weight:500;}
+.progress-text{font-size:13px;color:#888;}
+.prog-bar-wrap{height:3px;background:#e0dfd8;border-radius:2px;margin-bottom:1.25rem;overflow:hidden;}
+.prog-bar{height:3px;background:#1D9E75;border-radius:2px;transition:width 0.4s;}
+
+.q-card{background:#fff;border:1px solid #e0dfd8;border-radius:12px;padding:1.25rem;margin-bottom:0.75rem;}
+.q-cat{font-size:11px;color:#aaa;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+.q-sentence{font-size:15px;color:#1a1a18;line-height:1.75;margin-bottom:1.25rem;}
+.q-blank{display:inline-block;min-width:100px;border-bottom:2px solid #999;padding:0 4px;color:#aaa;font-style:italic;text-align:center;font-size:14px;}
+.q-opts{display:flex;flex-direction:column;gap:7px;margin-bottom:0.75rem;}
+.q-opt{background:#f5f4f0;border:1px solid #e0dfd8;border-radius:8px;padding:10px 14px;font-size:14px;cursor:pointer;color:#1a1a18;transition:all 0.12s;font-family:inherit;text-align:left;line-height:1.4;}
+.q-opt:hover{background:#fff;border-color:#aaa;}
+.q-opt.correct{background:#EAF3DE;border-color:#639922;color:#27500A;}
+.q-opt.wrong{background:#FCEBEB;border-color:#A32D2D;color:#501313;}
+.q-opt.reveal{background:#EAF3DE;border-color:#639922;color:#27500A;}
+.q-fb{font-size:14px;min-height:18px;margin-bottom:0.5rem;font-weight:500;}
+.q-explain{font-size:13px;color:#555;line-height:1.6;padding:10px 12px;background:#f5f4f0;border-radius:8px;margin-bottom:0.75rem;display:none;}
+.nav-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:0.5rem;flex-wrap:wrap;}
+
+/* REWRITE */
+.rw-num{font-size:12px;color:#aaa;font-weight:500;text-transform:uppercase;letter-spacing:0.3px;margin-bottom:6px;}
+.rw-card{background:#fff;border:1px solid #e0dfd8;border-radius:12px;padding:1.25rem;margin-bottom:0.75rem;}
+.rw-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:#aaa;margin-bottom:6px;}
+.rw-informal{font-size:14px;color:#1a1a18;line-height:1.65;margin-bottom:0.75rem;padding:10px 12px;background:#f5f4f0;border-radius:8px;}
+.rw-tip{font-size:13px;color:#888;margin-bottom:10px;line-height:1.5;}
+textarea{width:100%;min-height:72px;font-size:14px;line-height:1.6;resize:vertical;margin-bottom:10px;border:1px solid #d8d7d0;border-radius:8px;padding:9px 11px;font-family:inherit;background:#fff;color:#1a1a18;}
+textarea:focus{outline:none;border-color:#888;}
+.rw-model{display:none;font-size:13px;line-height:1.65;padding:10px 12px;border-radius:8px;background:#E1F5EE;color:#085041;margin-top:6px;}
+
+button{font-family:inherit;font-size:14px;cursor:pointer;border:1px solid #d8d7d0;border-radius:8px;padding:9px 16px;background:#fff;color:#1a1a18;transition:all 0.12s;-webkit-tap-highlight-color:transparent;}
+button:hover{background:#f0efe8;border-color:#aaa;}
+button:active{transform:scale(0.98);}
+.btn-primary{background:#1a1a18;color:#fff;border-color:#1a1a18;}
+.btn-primary:hover{background:#333;border-color:#333;}
+.btn-sm{font-size:13px;padding:7px 13px;}
+
+.fv-score-row{margin-top:1rem;font-size:13px;color:#777;display:flex;gap:1rem;flex-wrap:wrap;}
+.fv-score-row span{font-weight:500;color:#1a1a18;}
+
+.done-card{background:#fff;border:1px solid #e0dfd8;border-radius:12px;padding:1.5rem;margin-bottom:0.75rem;text-align:center;}
+.done-title{font-size:20px;font-weight:500;margin-bottom:6px;}
+.done-sub{font-size:15px;color:#777;}
+
+@media(min-width:560px){
+  .phrase-grid{grid-template-columns:1fr 1fr;}
+  .q-opts{flex-direction:row;flex-wrap:wrap;}
+  .q-opt{flex:1 1 calc(50% - 4px);}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>C1 Report Language Trainer</h1>
+  <span>B2 → C1</span>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="showSection('phrases',this)">Phrase bank<br><span style="font-size:11px;opacity:0.7;">20 fráz</span></button>
+    <button class="tab" onclick="showSection('quiz',this)">Gap fill<br><span style="font-size:11px;opacity:0.7;">20 otázok</span></button>
+    <button class="tab" onclick="showSection('rewrite',this)">Rewrite<br><span style="font-size:11px;opacity:0.7;">10 viet</span></button>
+    <button class="tab" onclick="showSection('formal',this)">Formal vs informal<br><span style="font-size:11px;opacity:0.7;">20 párov</span></button>
+  </div>
+
+  <div id="s-phrases" class="section active">
+    <p class="hint-note">Klikni na kartu pre príkladovú vetu</p>
+    <div class="phrase-filter" id="phrase-filter"></div>
+    <div class="phrase-grid" id="phrase-grid"></div>
+  </div>
+
+  <div id="s-quiz" class="section">
+    <div class="progress-row">
+      <div><div class="score-label">Správne</div><div class="score-val" id="q-score">0</div></div>
+      <div class="progress-text" id="q-progress">Otázka 1 / 20</div>
+    </div>
+    <div class="prog-bar-wrap"><div class="prog-bar" id="q-bar" style="width:0%"></div></div>
+    <div id="q-card"></div>
+    <div class="nav-row">
+      <button class="btn-sm" id="q-hint-btn" onclick="showQHint()">Zobraziť vysvetlenie</button>
+      <button class="btn-primary btn-sm" id="q-next-btn" onclick="nextQ()" style="display:none;">Ďalšia →</button>
+    </div>
+  </div>
+
+  <div id="s-rewrite" class="section">
+    <p style="font-size:13px;color:#888;margin-bottom:1rem;line-height:1.5;">Prepíš neformálne vety do jazyka vhodného pre formal report. Potom si skontroluj modelovú odpoveď.</p>
+    <div id="rw-cards"></div>
+  </div>
+
+  <div id="s-formal" class="section">
+    <p style="font-size:13px;color:#888;margin-bottom:1rem;line-height:1.5;">Vyber, ktorý výraz patrí do formal reportu.</p>
+    <div class="progress-row">
+      <div><div class="score-label">Správne</div><div class="score-val" id="fv-score">0</div></div>
+      <div class="progress-text" id="fv-progress">Otázka 1 / 20</div>
+    </div>
+    <div class="prog-bar-wrap"><div class="prog-bar" id="fv-bar" style="width:0%"></div></div>
+    <div id="fv-card"></div>
+    <div class="nav-row">
+      <div id="fv-msg" style="font-size:14px;font-weight:500;min-height:20px;"></div>
+      <button id="fv-next" class="btn-primary btn-sm" onclick="nextFV()" style="display:none;">Ďalší →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PHRASES=[
+  {tag:"intro",en:"The purpose of this report is to",sk:"Cieľom tohto reportu je",ex:"The purpose of this report is to examine the impact of remote working on employee productivity."},
+  {tag:"intro",en:"This report aims to assess",sk:"Tento report si kladie za cieľ zhodnotiť",ex:"This report aims to assess the feasibility of introducing a four-day working week across all departments."},
+  {tag:"intro",en:"The data was gathered by means of",sk:"Údaje boli zozbierané prostredníctvom",ex:"The data was gathered by means of a structured questionnaire distributed to 200 participants."},
+  {tag:"intro",en:"The findings presented herein are based on",sk:"Zistenia uvedené v tomto reporte vychádzajú z",ex:"The findings presented herein are based on interviews conducted with senior management over a two-week period."},
+  {tag:"findings",en:"The findings indicate that",sk:"Zistenia naznačujú, že",ex:"The findings indicate that the majority of respondents were dissatisfied with current transport links."},
+  {tag:"findings",en:"It is evident from the data that",sk:"Z údajov je zrejmé, že",ex:"It is evident from the data that demand for online courses has increased significantly over the past year."},
+  {tag:"findings",en:"A significant proportion of",sk:"Značná časť / podiel",ex:"A significant proportion of those surveyed reported experiencing workplace stress on a daily basis."},
+  {tag:"findings",en:"The survey reveals that",sk:"Prieskum odhaľuje, že",ex:"The survey reveals that over two-thirds of employees are in favour of a hybrid working model."},
+  {tag:"trend",en:"There has been a marked increase in",sk:"Zaznamenali sme výrazný nárast v",ex:"There has been a marked increase in the number of students opting for vocational training over traditional university degrees."},
+  {tag:"trend",en:"Conversely / In contrast",sk:"Naopak / Na druhej strane",ex:"Sales figures rose in Q1; conversely, customer satisfaction scores declined sharply over the same period."},
+  {tag:"trend",en:"It is worth noting that",sk:"Je pozoruhodné / treba podotknúť",ex:"It is worth noting that the results varied considerably across different age groups and regions."},
+  {tag:"trend",en:"This represents a considerable decline in",sk:"Toto predstavuje výrazný pokles v",ex:"This represents a considerable decline in public confidence in the transport system compared to previous years."},
+  {tag:"rec",en:"It is therefore recommended that",sk:"Preto sa odporúča, aby",ex:"It is therefore recommended that the company invest in additional staff training to address these shortcomings."},
+  {tag:"rec",en:"Steps should be taken to",sk:"Mali by sa prijať opatrenia na",ex:"Steps should be taken to reduce reliance on single-use plastics across all departments by the end of the year."},
+  {tag:"rec",en:"It would be advisable to",sk:"Bolo by vhodné / žiaduce",ex:"It would be advisable to conduct a follow-up survey within six months to monitor progress effectively."},
+  {tag:"rec",en:"The management should give serious consideration to",sk:"Vedenie by malo vážne zvážiť",ex:"The management should give serious consideration to revising the current performance review process."},
+  {tag:"concl",en:"In conclusion, it is clear that",sk:"Na záver je zrejmé, že",ex:"In conclusion, it is clear that further investment in public infrastructure is both necessary and urgent."},
+  {tag:"concl",en:"On the whole, the evidence suggests that",sk:"Celkovo dôkazy naznačujú, že",ex:"On the whole, the evidence suggests that the pilot programme has been largely successful and merits expansion."},
+  {tag:"concl",en:"Provided that these measures are implemented",sk:"Za predpokladu, že tieto opatrenia budú prijaté",ex:"Provided that these measures are implemented promptly, significant improvements can be expected within a year."},
+  {tag:"concl",en:"It is anticipated that",sk:"Predpokladá sa / očakáva sa, že",ex:"It is anticipated that the proposed changes will result in measurable improvements in both morale and productivity."},
+];
+
+const TAG_META={
+  intro:{cls:"tag-intro",label:"Introduction"},
+  findings:{cls:"tag-findings",label:"Findings"},
+  trend:{cls:"tag-trend",label:"Trends & contrast"},
+  rec:{cls:"tag-rec",label:"Recommendations"},
+  concl:{cls:"tag-concl",label:"Conclusion"}
+};
+
+const QUIZ=[
+  {cat:"Introduction",sentence:"__________ this report is to evaluate the current recycling facilities available to residents in the city.",blank:"The purpose of",opts:["The purpose of","The reason of","The aim about","This report wants"],correct:0,explain:"'The purpose of this report is to...' is the standard C1 opener. Note: 'aim' also works but needs 'to': 'This report aims to evaluate...'"},
+  {cat:"Findings",sentence:"__________ the data that demand for electric vehicles has grown substantially over the past three years.",blank:"It is evident from",opts:["It is evident from","It is clear of","It shows from","We can see from"],correct:0,explain:"'It is evident from the data that' is impersonal and academic. Avoid 'we can see' or 'we found' — they're too informal for reports."},
+  {cat:"Findings",sentence:"__________ those surveyed expressed serious concern about levels of noise pollution in the area.",blank:"A significant proportion of",opts:["A significant proportion of","A big part of","Many of","Lots of"],correct:0,explain:"'A significant proportion of' is precise and academic. 'A lot of', 'many of' and 'lots of' are too informal for C1 writing."},
+  {cat:"Trends",sentence:"Attendance at evening classes rose steadily; __________, morning enrolment declined sharply throughout the term.",blank:"conversely",opts:["conversely","but","also","therefore"],correct:0,explain:"'Conversely' is a formal linker for direct contrast between two opposing ideas. 'But' is too conversational in formal writing."},
+  {cat:"Trends",sentence:"There has been __________ in the number of students choosing to take a gap year before university.",blank:"a marked increase",opts:["a marked increase","a big rise","lots more","a huge jump"],correct:0,explain:"'A marked increase/rise/decline' is standard academic language. Avoid 'huge', 'big', or 'lots' in formal report writing."},
+  {cat:"Trends",sentence:"__________ that participation rates varied considerably by both region and age group.",blank:"It is worth noting",opts:["It is worth noting","It is good to know","We should say","It is interesting"],correct:0,explain:"'It is worth noting that' is a formal way to draw attention to an important detail without using personal pronouns."},
+  {cat:"Recommendations",sentence:"__________ the management review the overtime policy at the earliest possible opportunity.",blank:"It is therefore recommended that",opts:["It is therefore recommended that","We think that","The report thinks","It is suggested to"],correct:0,explain:"Passive constructions like 'It is recommended that...' are the hallmark of formal recommendations. Avoid 'we think' entirely."},
+  {cat:"Recommendations",sentence:"__________ ensure all staff complete the updated mandatory training module before the end of March.",blank:"Steps should be taken to",opts:["Steps should be taken to","We need to","They must","The company has to"],correct:0,explain:"'Steps should be taken to' is impersonal and appropriately formal. 'Must' or 'have to' sound too direct and demanding in a report."},
+  {cat:"Recommendations",sentence:"__________ pilot the new scheme in one department before rolling it out across the entire organisation.",blank:"It would be advisable to",opts:["It would be advisable to","It would be good to","We should","Maybe they could"],correct:0,explain:"'It would be advisable to' hedges the recommendation politely — a key feature of formal written English at C1 level."},
+  {cat:"Conclusion",sentence:"__________, the evidence suggests that the current transport system requires significant and urgent reform.",blank:"On the whole",opts:["On the whole","At the end","To finish","Last of all"],correct:0,explain:"'On the whole' and 'Overall' are standard academic summary phrases. 'At the end' and 'To finish' are informal and inappropriate."},
+  {cat:"Data",sentence:"The data was gathered __________ structured interviews conducted with 50 members of staff over two weeks.",blank:"by means of",opts:["by means of","using of","with the use of","by using of"],correct:0,explain:"'By means of' is a formal prepositional phrase. 'With the use of' also works. 'By using of' is grammatically incorrect."},
+  {cat:"Conclusion",sentence:"__________ these recommendations are followed in full, substantial cost savings can be expected within 12 months.",blank:"Provided that",opts:["Provided that","If","When","As long as"],correct:0,explain:"'Provided that' is a formal conditional — more precise and academic than plain 'if'. Also correct: 'On condition that'."},
+  {cat:"Introduction",sentence:"The findings __________ are based on responses from a representative sample of 300 employees.",blank:"presented herein",opts:["presented herein","in this report here","we show here","in here"],correct:0,explain:"'Herein' is a formal adverb meaning 'in this document'. It's a typical C1 register marker that immediately lifts the formality."},
+  {cat:"Findings",sentence:"The survey __________ that over two-thirds of respondents support the proposed changes to working hours.",blank:"reveals",opts:["reveals","shows us","tells us","says"],correct:0,explain:"'The survey reveals that' is formal and impersonal. 'Tells us' and 'says' are too conversational for academic writing."},
+  {cat:"Trends",sentence:"This __________ a considerable decline in public confidence compared to the figures recorded in the previous year.",blank:"represents",opts:["represents","is","means","shows us"],correct:0,explain:"'This represents a considerable decline' is formal and precise. 'This is' is too vague; 'shows us' introduces an unnecessary personal pronoun."},
+  {cat:"Recommendations",sentence:"The management should give __________ to revising the current performance review process.",blank:"serious consideration",opts:["serious consideration","serious thought","a good think","time"],correct:0,explain:"'Give serious consideration to' is a set formal phrase for recommendations. 'Give a good think' is colloquial and inappropriate."},
+  {cat:"Conclusion",sentence:"It is __________ that the proposed changes will result in measurable improvements in both morale and output.",blank:"anticipated",opts:["anticipated","expected by us","thought","guessed"],correct:0,explain:"'It is anticipated that' is an impersonal passive construction — essential for formal conclusions. Avoid 'we expect' or 'we think'."},
+  {cat:"Findings",sentence:"The results suggest that there is __________ between salary expectations and actual remuneration packages offered.",blank:"a significant discrepancy",opts:["a significant discrepancy","a big difference","quite a gap","a huge difference"],correct:0,explain:"'A significant discrepancy' is precise academic vocabulary. Adjectives like 'big', 'huge' and adverbs like 'quite' lower the register significantly."},
+  {cat:"Recommendations",sentence:"It is __________ that additional funding be allocated to community outreach programmes in the coming financial year.",blank:"strongly recommended",opts:["strongly recommended","really suggested","very advised","very recommended"],correct:0,explain:"'Strongly recommended' is the standard collocation. 'Very advised' and 'very recommended' are not natural collocations in English."},
+  {cat:"Trends",sentence:"While overall satisfaction has improved, __________ that response times remain a key area of concern for users.",blank:"it should be noted",opts:["it should be noted","we note","don't forget","you can see"],correct:0,explain:"'It should be noted that' is an impersonal, formal way to flag an important caveat. Avoid 'don't forget' or 'you can see' in formal writing."},
+];
+
+const REWRITES=[
+  {informal:"We looked at how happy workers are and found out that lots of them want more flexible hours.",tip:"💡 Replace 'we looked at', 'found out', 'lots of'. Think: examination / revealed / a significant proportion.",model:"An examination of employee satisfaction levels revealed that a significant proportion of staff expressed a preference for more flexible working arrangements."},
+  {informal:"Things are getting better — more people are using public transport now.",tip:"💡 Avoid 'things'. Use 'There has been a marked increase in...' or 'It is evident that...' and keep it impersonal.",model:"There has been a marked increase in public transport usage, suggesting a positive shift in commuting behaviour among residents."},
+  {informal:"We think the company should spend more money on training because it's really important.",tip:"💡 Avoid 'we think' and 'really'. Use 'It is therefore recommended that...' and 'is considered essential'.",model:"It is therefore recommended that the company allocate additional resources to staff training, as this is considered essential for long-term organisational productivity."},
+  {informal:"Most people said the new system was bad and they didn't like it.",tip:"💡 'Most people said' → 'The majority of respondents reported'. 'Bad' → 'unsatisfactory' / 'inadequate'.",model:"The majority of respondents reported that the new system was unsatisfactory, and expressed considerable dissatisfaction with the manner in which it had been implemented."},
+  {informal:"To sum up, we can see that the project worked well and we should do more like this.",tip:"💡 Use 'In conclusion, it is clear that...' — the conclusion should be fully impersonal. Avoid 'we can see'.",model:"In conclusion, it is clear that the project has been largely successful, and it is recommended that similar initiatives be explored in future planning cycles."},
+  {informal:"Not many people knew about the new policy, which is a problem.",tip:"💡 'Not many people' → 'A limited number of / few respondents'. Avoid 'which is a problem' — rephrase as a formal observation.",model:"A limited number of respondents demonstrated awareness of the revised policy, which represents a significant communication failure that warrants immediate attention."},
+  {informal:"The sales went down a lot in the second half of the year and this was a big issue for everyone.",tip:"💡 'Went down a lot' → 'declined considerably / experienced a marked decline'. Avoid 'a big issue for everyone'.",model:"Sales figures experienced a marked decline during the second half of the year, presenting considerable challenges for all departments involved."},
+  {informal:"We asked 100 people and most of them said yes to the idea.",tip:"💡 'We asked' → 'A survey of / data collected from'. 'Most of them said yes to the idea' → 'the majority expressed support for the proposal'.",model:"Data collected from 100 respondents indicated that the majority expressed support for the proposed initiative, with only a minority raising concerns."},
+  {informal:"The staff are pretty stressed and they keep leaving their jobs because of the long hours.",tip:"💡 'Pretty stressed' → 'experiencing significant levels of stress'. 'Keep leaving' → 'high turnover rates'. Use passive or impersonal constructions.",model:"It is evident that staff are experiencing significant levels of stress, contributing to elevated turnover rates that appear to be directly linked to excessive working hours."},
+  {informal:"If the managers do what we said, things will probably get better soon.",tip:"💡 'If' → 'Provided that' / 'Should'. 'Things will get better' → 'significant improvements can be anticipated'. Avoid 'probably'.",model:"Provided that management implements the recommendations outlined in this report, significant improvements in both staff wellbeing and operational efficiency can be anticipated within the coming months."},
+];
+
+const FORMAL_VS=[
+  {q:"Ktorý výraz je vhodný pre formal report?",a:"The findings indicate that",b:"We found out that",correct:"a",explain:"'The findings indicate that' je neosobné a akademické. 'We found out' je príliš konverzačné a vyhýba sa pasívnej konštrukcii."},
+  {q:"Ako formálne vyjadriť kontrast?",a:"But on the other hand",b:"Conversely",correct:"b",explain:"'Conversely' je formálny konektorový výraz. 'But on the other hand' kombinuje dva neformálne prvky — vo formal writing je to nevhodné."},
+  {q:"Ako správne uviesť odporúčanie?",a:"It is recommended that the company invest in...",b:"The company should really invest in...",correct:"a",explain:"Pasívna forma 'It is recommended that' je štandardná pre formal reporty. 'Really' je kolokviálne a vyhýbame sa mu v akademickom písaní."},
+  {q:"Ako formálne opísať veľký počet respondentov?",a:"Loads of respondents",b:"A considerable number of respondents",correct:"b",explain:"'A considerable / significant number of' je formálne. 'Loads of' patrí výhradne do hovorenej reči a neformálnych textov."},
+  {q:"Ako formálne uviesť dôkaz z dát?",a:"It is evident from the data that",b:"You can see from the data that",correct:"a",explain:"Neosobné konštrukcie sú kľúčom k formal style. Vyhýbajte sa 'you' v akademických textoch — pôsobí príliš priamo."},
+  {q:"Ako vyjadriť záver formálne?",a:"To wrap up, things look good.",b:"On the whole, the evidence suggests that the initiative has been successful.",correct:"b",explain:"'On the whole' + impersonálna veta je správny formálny záver. 'To wrap up' a 'things look good' sú neformálne."},
+  {q:"Ako formálne opísať nárast?",a:"Things went up a lot.",b:"There has been a marked increase in...",correct:"b",explain:"'A marked / considerable / significant increase' sú presné a akademické kolokácie. 'Things went up a lot' je neformálne a vágne."},
+  {q:"Ako správne uviesť cieľ reportu?",a:"In this report we want to look at...",b:"The purpose of this report is to examine...",correct:"b",explain:"'The purpose of this report is to...' je klasický formálny opener. 'We want to' je príliš osobné a neformálne."},
+  {q:"Ako formálne uviesť zdroj dát?",a:"We got our data from interviews.",b:"The data was gathered by means of structured interviews.",correct:"b",explain:"'The data was gathered by means of' je impersonálne a presné. 'We got our data from' je príliš neformálne pre C1 report."},
+  {q:"Ako formálne vyjadriť odporúčanie s podmienkou?",a:"If they do this, things will get better.",b:"Provided that these measures are implemented, significant improvements can be expected.",correct:"b",explain:"'Provided that' je formálna podmienková spojka. 'If... things will get better' je vágne a neformálne — chýba presná akademická lexika."},
+  {q:"Ako formálne opísať pokles?",a:"The numbers dropped quite a bit.",b:"The data reflects a considerable decline in participation rates.",correct:"b",explain:"'A considerable decline' je presná akademická formulácia. 'Dropped quite a bit' je konverzačné a nevhodné pre písaný formal report."},
+  {q:"Ako formálne uviesť dôležitú poznámku?",a:"Don't forget that results varied by region.",b:"It should be noted that results varied considerably by region.",correct:"b",explain:"'It should be noted that' je formálny impersonálny výraz. 'Don't forget' je príkaz — nevhodný register pre akademický text."},
+  {q:"Ako formálne opísať, čo prieskum ukázal?",a:"The survey told us that most staff are stressed.",b:"The survey reveals that a significant proportion of staff report elevated stress levels.",correct:"b",explain:"'The survey reveals that' + 'a significant proportion' + 'report' (impersonálne) — to sú tri znaky C1 formal style v jednej vete."},
+  {q:"Ako formálne povedať, že niečo treba zlepšiť?",a:"They really need to fix this problem.",b:"This issue warrants immediate attention and remedial action.",correct:"b",explain:"'Warrants immediate attention' je C1 formálna fráza. 'Really need to fix' je kolokviálne — 'really' a 'fix' sú príznačné pre hovorenú reč."},
+  {q:"Ako formálne vyjadriť prekvapivý výsledok?",a:"Surprisingly enough, young people don't like it.",b:"Notably, younger respondents expressed a markedly lower level of satisfaction.",correct:"b",explain:"'Notably' + 'markedly lower' sú formálne výrazy. 'Surprisingly enough' a 'don't like it' sú neformálne a nepresné."},
+  {q:"Ako formálne povedať, že výsledky sa líšili?",a:"It's interesting that answers were different.",b:"It is worth noting that responses varied considerably across demographic groups.",correct:"b",explain:"'It is worth noting that... varied considerably' je formálna konštrukcia. 'It's interesting' a 'answers were different' sú vágne a neformálne."},
+  {q:"Ako formálne vyjadriť, že niečo je problém?",a:"This is a big problem for the company.",b:"This represents a significant challenge for the organisation.",correct:"b",explain:"'Represents a significant challenge' je formálnejšie a presnejšie ako 'is a big problem'. 'Big' je príliš všeobecné a neformálne."},
+  {q:"Ako formálne uviesť, že odporúčanie je silné?",a:"We really suggest doing this as soon as possible.",b:"It is strongly recommended that this measure be implemented without delay.",correct:"b",explain:"'It is strongly recommended that + subjunctive' je štandardná C1 konštrukcia. 'We really suggest' je neformálne — 'really' a 'suggest' znižujú register."},
+  {q:"Ako formálne opísať väčšinu respondentov?",a:"Most people we asked said yes.",b:"The majority of respondents expressed a favourable view of the proposal.",correct:"b",explain:"'The majority of respondents expressed' je impersonálne a presné. 'Most people we asked said yes' je príliš hovorové."},
+  {q:"Ako formálne povedať, že dáta sú založené na niečom?",a:"Our report is based on what people told us.",b:"The findings presented herein are based on data collected from a representative sample.",correct:"b",explain:"'The findings presented herein are based on' je formálna, impersonálna konštrukcia. 'What people told us' je vágne a neformálne."},
+];
+
+function showSection(id,btn){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('s-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+// PHRASE BANK
+(function(){
+  const filters=['all','intro','findings','trend','rec','concl'];
+  const labels={all:'Všetky (20)',intro:'Introduction (4)',findings:'Findings (4)',trend:'Trends (4)',rec:'Recommendations (4)',concl:'Conclusion (4)'};
+  const fc=document.getElementById('phrase-filter');
+  let active='all';
+  filters.forEach(f=>{
+    const b=document.createElement('button');
+    b.className='pf-btn pf-'+f+(f==='all'?' active':'');
+    b.textContent=labels[f];
+    b.onclick=()=>{
+      active=f;
+      document.querySelectorAll('.pf-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.phrase-card').forEach(c=>{
+        c.classList.toggle('hidden', f!=='all' && c.dataset.tag!==f);
+      });
+    };
+    fc.appendChild(b);
+  });
+  const g=document.getElementById('phrase-grid');
+  PHRASES.forEach((p,i)=>{
+    const m=TAG_META[p.tag];
+    const d=document.createElement('div');
+    d.className='phrase-card';
+    d.dataset.tag=p.tag;
+    d.innerHTML=`<span class="phrase-tag ${m.cls}">${m.label}</span><div class="phrase-en">${p.en}</div><div class="phrase-sk">${p.sk}</div><div class="phrase-example" id="pex-${i}">${p.ex}</div>`;
+    d.onclick=()=>{const e=document.getElementById('pex-'+i);e.style.display=e.style.display==='none'?'block':'none';};
+    g.appendChild(d);
+  });
+})();
+
+// QUIZ
+let qi=0,qcorrect=0,qtotal=0,qanswered=false,qOrder=[];
+function initQuiz(){qOrder=shuffle([...Array(QUIZ.length).keys()]);qi=0;qcorrect=0;qtotal=0;renderQ();}
+function renderQ(){
+  if(qi>=qOrder.length){
+    document.getElementById('q-card').innerHTML=`<div class="done-card"><div class="done-title">Hotovo!</div><div class="done-sub">Správne: ${qcorrect} / ${QUIZ.length}</div></div>`;
+    document.getElementById('q-next-btn').style.display='none';
+    const hb=document.getElementById('q-hint-btn');
+    hb.textContent='Hrať znova';
+    hb.onclick=()=>{initQuiz();hb.textContent='Zobraziť vysvetlenie';hb.onclick=showQHint;};
+    return;
+  }
+  qanswered=false;
+  const q=QUIZ[qOrder[qi]];
+  const opts=shuffle([...q.opts]);
+  document.getElementById('q-progress').textContent=`Otázka ${qi+1} / ${QUIZ.length}`;
+  document.getElementById('q-hint-btn').style.display='block';
+  document.getElementById('q-next-btn').style.display='none';
+  document.getElementById('q-card').innerHTML=`
+    <div class="q-card">
+      <div class="q-cat">${q.cat}</div>
+      <div class="q-sentence">${q.sentence.replace(q.blank,'<span class="q-blank">'+q.blank+'</span>')}</div>
+      <div class="q-opts">${opts.map(o=>`<button class="q-opt" onclick="checkQ(this,'${o.replace(/'/g,"\\'")}','${q.correct===q.opts.indexOf(o)}')">${o}</button>`).join('')}</div>
+      <div class="q-fb" id="q-fb"></div>
+      <div class="q-explain" id="q-explain">${q.explain}</div>
+    </div>`;
+  document.getElementById('q-bar').style.width=Math.round(qi/QUIZ.length*100)+'%';
+}
+function checkQ(btn,chosen,isCorrect){
+  if(qanswered)return;
+  qanswered=true;qtotal++;
+  const correct=QUIZ[qOrder[qi]].opts[QUIZ[qOrder[qi]].correct];
+  document.querySelectorAll('.q-opt').forEach(b=>{b.style.pointerEvents='none';if(b.textContent===correct)b.classList.add('reveal');});
+  const fb=document.getElementById('q-fb');
+  if(isCorrect==='true'){btn.classList.add('correct');qcorrect++;fb.textContent='✓ Správne!';fb.style.color='#3B6D11';}
+  else{btn.classList.add('wrong');fb.textContent='✗ Správna odpoveď: '+correct;fb.style.color='#A32D2D';}
+  document.getElementById('q-score').textContent=qcorrect;
+  document.getElementById('q-explain').style.display='block';
+  document.getElementById('q-hint-btn').style.display='none';
+  document.getElementById('q-next-btn').style.display='block';
+  qi++;
+}
+function showQHint(){const e=document.getElementById('q-explain');if(e)e.style.display=e.style.display==='none'?'block':'none';}
+function nextQ(){renderQ();}
+initQuiz();
+
+// REWRITES
+(function(){
+  const c=document.getElementById('rw-cards');
+  REWRITES.forEach((r,i)=>{
+    const d=document.createElement('div');
+    d.className='rw-card';
+    d.innerHTML=`
+      <div class="rw-num">Cvičenie ${i+1} / ${REWRITES.length}</div>
+      <div class="rw-label">Neformálna verzia</div>
+      <div class="rw-informal">${r.informal}</div>
+      <div class="rw-tip">${r.tip}</div>
+      <div class="rw-label">Tvoja verzia (formal report)</div>
+      <textarea placeholder="Write your formal version here..."></textarea>
+      <button class="btn-sm" onclick="toggleModel(this)">Zobraziť modelovú odpoveď</button>
+      <div class="rw-model">${r.model}</div>`;
+    c.appendChild(d);
+  });
+})();
+function toggleModel(btn){
+  const m=btn.nextElementSibling;
+  const showing=m.style.display==='block';
+  m.style.display=showing?'none':'block';
+  btn.textContent=showing?'Zobraziť modelovú odpoveď':'Skryť modelovú odpoveď';
+}
+
+// FORMAL VS INFORMAL
+let fvi=0,fvcorrect=0,fvtotal=0,fvOrder=[];
+function initFV(){fvOrder=shuffle([...Array(FORMAL_VS.length).keys()]);fvi=0;fvcorrect=0;fvtotal=0;updateFVProgress();renderFV();}
+function updateFVProgress(){
+  document.getElementById('fv-score').textContent=fvcorrect;
+  document.getElementById('fv-progress').textContent=`Otázka ${Math.min(fvi+1,FORMAL_VS.length)} / ${FORMAL_VS.length}`;
+  document.getElementById('fv-bar').style.width=Math.round(fvi/FORMAL_VS.length*100)+'%';
+}
+function renderFV(){
+  if(fvi>=fvOrder.length){
+    document.getElementById('fv-card').innerHTML=`<div class="done-card"><div class="done-title">Hotovo!</div><div class="done-sub">Správne: ${fvcorrect} / ${FORMAL_VS.length}</div></div>`;
+    document.getElementById('fv-next').style.display='none';
+    document.getElementById('fv-score').textContent=fvcorrect;
+    document.getElementById('fv-progress').textContent=`${FORMAL_VS.length} / ${FORMAL_VS.length}`;
+    document.getElementById('fv-bar').style.width='100%';
+    return;
+  }
+  const item=FORMAL_VS[fvOrder[fvi]];
+  document.getElementById('fv-msg').textContent='';
+  document.getElementById('fv-next').style.display='none';
+  updateFVProgress();
+  document.getElementById('fv-card').innerHTML=`
+    <div class="q-card">
+      <div class="q-cat">Formal vs informal</div>
+      <div style="font-size:15px;font-weight:500;margin-bottom:1.1rem;line-height:1.5;">${item.q}</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:0.75rem;">
+        <button class="q-opt" id="fv-a" onclick="checkFV('a')" style="text-align:left;">A: ${item.a}</button>
+        <button class="q-opt" id="fv-b" onclick="checkFV('b')" style="text-align:left;">B: ${item.b}</button>
+      </div>
+      <div class="q-explain" id="fv-explain">${item.explain}</div>
+    </div>`;
+}
+function checkFV(choice){
+  const item=FORMAL_VS[fvOrder[fvi]];
+  fvtotal++;
+  [document.getElementById('fv-a'),document.getElementById('fv-b')].forEach(b=>b.style.pointerEvents='none');
+  const msg=document.getElementById('fv-msg');
+  if(choice===item.correct){fvcorrect++;document.getElementById('fv-'+choice).classList.add('correct');msg.textContent='✓ Správne!';msg.style.color='#3B6D11';}
+  else{document.getElementById('fv-'+choice).classList.add('wrong');document.getElementById('fv-'+item.correct).classList.add('reveal');msg.textContent='✗ Správna: možnosť '+item.correct.toUpperCase();msg.style.color='#A32D2D';}
+  document.getElementById('fv-explain').style.display='block';
+  fvi++;
+  document.getElementById('fv-score').textContent=fvcorrect;
+  document.getElementById('fv-next').style.display='block';
+}
+function nextFV(){renderFV();}
+initFV();
+</script>
+</body>
+</html>
